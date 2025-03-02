@@ -1,0 +1,36 @@
+# This workflow will build and test a golang project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+
+name: Go
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.20'
+
+    - name: Build
+      run: |
+           GOOS=linux
+           GOARCH=amd64
+           go build -o KnowEase1_linux_amd64 wire_gen.go main.go
+
+    - name: Test
+      run: go test -coverprofile='coverage.out' -covermode=count KnowEase/controllers
+    - name: Upload coverage report
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-report
+        path: coverage.out
