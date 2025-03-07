@@ -6,4 +6,7 @@ var ProviderSet = wire.NewSet(
 	NewUserPageSvc,
 	NewPostSvc,
 	NewUserSvc,
+	NewQASvc,
+	NewSearchSvc,
+	NewAIChatSvc,
 )

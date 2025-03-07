@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"context"
 
 	"github.com/gin-gonic/gin"
 )
@@ -27,20 +28,22 @@ func NewLikeControllers(LikeService *services.LikeService, PostService *services
 // @Produce application/json
 // @Param postid path string true "帖子ID"
 // @Param userid path string true "用户ID"
+// @Param type path string true "帖子类型"
 // @Success 201 {object} models.Response "用户点赞成功"
 // @Failure 400 {object} models.Response "输入无效"
 // @Failure 500 {object} models.Response "点赞记录上传失败"
-// @Router /api/{userid}/post/{postid}/like [post]
+// @Router /api/{userid}/{type}/{postid}/like [post]
 func (lc *LikeControllers) LikePost(c *gin.Context) {
 	PostID := c.Param("postid")
 	UserID := c.Param("userid")
-	if PostID == "" || UserID == "" {
+	Type:=c.Param("type")
+	if PostID == "" || UserID == "" ||Type==""{
 		c.JSON(http.StatusBadRequest, models.Write("输入无效，请重试！"))
 		return
 	}
 	Post, _ := lc.PostService.GetPostByID(PostID)
-	User, _ := lc.UserService.GetUserFromID(UserID)
-	if err := lc.LikeService.LikePost(PostID, UserID); err != nil {
+	User, _ := lc.UserService.SearchUserByID(UserID)
+	if err := lc.LikeService.HandleUserAction(Type, "like", PostID, UserID, Type, "like"); err != nil {
 		c.JSON(http.StatusInternalServerError, models.Write(err.Error()))
 		return
 	}
@@ -58,18 +61,20 @@ func (lc *LikeControllers) LikePost(c *gin.Context) {
 // @Produce application/json
 // @Param postid path string true "帖子ID"
 // @Param userid path string true "用户D"
+// @Param type path string true "帖子类型"
 // @Success 201 {object} models.Response "用户取消点赞成功"
 // @Failure 400 {object} models.Response "输入无效"
 // @Failure 500 {object} models.Response "取消点赞记录上传失败"
-// @Router /api/{userid}/post/{postid}/cancellike [post]
+// @Router /api/{userid}/{type}/{postid}/cancellike [post]
 func (lc *LikeControllers) CancelLike(c *gin.Context) {
 	PostID := c.Param("postid")
 	UserID := c.Param("userid")
-	if PostID == "" || UserID == "" {
+	Type:=c.Param("type")
+	if PostID == "" || UserID == ""||Type=="" {
 		c.JSON(http.StatusBadRequest, models.Write("输入无效，请重试！"))
 		return
 	}
-	if err := lc.LikeService.CancelLike(PostID, UserID); err != nil {
+	if err := lc.LikeService.HandleUserAction(Type, "like", PostID, UserID, Type, "cancel"); err != nil {
 		c.JSON(http.StatusInternalServerError, models.Write(err.Error()))
 		return
 	}
@@ -93,9 +98,10 @@ func (lc *LikeControllers) GetUserLikes(c *gin.Context) {
 		return
 	}
 	likecount, err1 := lc.LikeService.GetUserLikes(UserID)
-	followercount, followeecount, err2 := lc.LikeService.GetFollowCount(UserID)
-	if err1 != nil || err2 != nil {
-		fmt.Printf("get user counts error:%v %v", err1, err2)
+	followercount, err2 := lc.LikeService.GetCount("follower", UserID, "follow")
+	followeecount, err3 := lc.LikeService.GetCount("followee", UserID, "follow")
+	if err1 != nil || err2 != nil || err3 != nil {
+		fmt.Printf("get user counts error:%v %v %v", err1, err2, err3)
 		c.JSON(http.StatusInternalServerError, models.Write("查询用户数据失败"))
 		return
 	}
@@ -108,17 +114,19 @@ func (lc *LikeControllers) GetUserLikes(c *gin.Context) {
 // @Accept application/json
 // @Produce application/json
 // @Param userid path string true "用户ID"
+// @Param type path string true "分区"
 // @Success 200 {object} map[string]interface{} "成功信息以及历史点赞帖子"
 // @Failure 400 {object} models.Response "输入无效"
 // @Failure 500 {object} models.Response "获取点赞记录失败"
-// @Router /api/{userid}/userpage/likerecord [get]
+// @Router /api/{userid}/userpage/likerecord/{type} [get]
 func (lc *LikeControllers) GetLikeRecord(c *gin.Context) {
 	UserID := c.Param("userid")
-	if UserID == "" {
+	Type := c.Param("type")
+	if UserID == "" || Type == "" {
 		c.JSON(http.StatusBadRequest, models.Write("输入无效，请重试！"))
 		return
 	}
-	Record, err := lc.LikeService.GetLikeRecord(UserID)
+	Record, err := lc.LikeService.GetLikeRecord(UserID, Type)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.Write(err.Error()))
 		return
@@ -141,18 +149,20 @@ func (lc *LikeControllers) GetLikeRecord(c *gin.Context) {
 // @Produce application/json
 // @Param postid path string true "帖子ID"
 // @Param userid path string true "用户ID"
+// @Param type path string true "帖子类型"
 // @Success 201 {object} models.Response "用户收藏成功"
 // @Failure 400 {object} models.Response "输入无效"
 // @Failure 500 {object} models.Response "收藏记录上传失败"
-// @Router /api/posts/{postid}/{userid}/save [post]
+// @Router /api/{type}/{postid}/{userid}/save [post]
 func (lc *LikeControllers) SavePost(c *gin.Context) {
 	PostID := c.Param("postid")
 	UserID := c.Param("userid")
-	if PostID == "" || UserID == "" {
+	Type:=c.Param("type")
+	if PostID == "" || UserID == "" ||Type==""{
 		c.JSON(http.StatusBadRequest, models.Write("输入无效，请重试！"))
 		return
 	}
-	if err := lc.LikeService.SavePost(PostID, UserID); err != nil {
+	if err := lc.LikeService.HandleUserAction(Type, "save", PostID, UserID, Type, "like"); err != nil {
 		c.JSON(http.StatusInternalServerError, models.Write(err.Error()))
 		return
 	}
@@ -166,18 +176,20 @@ func (lc *LikeControllers) SavePost(c *gin.Context) {
 // @Produce application/json
 // @Param postid path string true "帖子ID"
 // @Param userid path string true "用户ID"
+// @Param type path string true "帖子类型"
 // @Success 201 {object} models.Response "用户取消收藏成功"
 // @Failure 400 {object} models.Response "输入无效"
 // @Failure 500 {object} models.Response "取消收藏记录上传失败"
-// @Router /api/{userid}/post/{postid}/cancelsave [post]
+// @Router /api/{userid}/{type}/{postid}/cancelsave [post]
 func (lc *LikeControllers) CancelSave(c *gin.Context) {
 	PostID := c.Param("postid")
 	UserID := c.Param("userid")
-	if PostID == "" || UserID == "" {
+	Type:=c.Param("type")
+	if PostID == "" || UserID == "" ||Type==""{
 		c.JSON(http.StatusBadRequest, models.Write("输入无效，请重试！"))
 		return
 	}
-	if err := lc.LikeService.CancelSave(PostID, UserID); err != nil {
+	if err := lc.LikeService.HandleUserAction(Type, "save", PostID, UserID, Type, "cancel"); err != nil {
 		c.JSON(http.StatusInternalServerError, models.Write(err.Error()))
 		return
 	}
@@ -186,21 +198,24 @@ func (lc *LikeControllers) CancelSave(c *gin.Context) {
 
 // @Summary 获取用户历史收藏记录
 // @Description 在个人主页获取用户的历史收藏记录
-// @Tags 个人主页-记录查询
+// @Tags 个人主页-记录查询-生活
 // @Accept application/json
 // @Produce application/json
 // @Param userid path string true "用户ID"
+// @Param type path string true "帖子类型"
+// @Param type path string true "分区"
 // @Success 200 {object} map[string]interface{} "成功信息以及历史收藏帖子"
 // @Failure 400 {object} models.Response "输入无效"
 // @Failure 500 {object} models.Response "获取收藏记录失败"
-// @Router /api/{userid}/userpage/saverecord [get]
+// @Router /api/{userid}/userpage/saverecord/{type} [get]
 func (lc *LikeControllers) GetSaveRecord(c *gin.Context) {
 	UserID := c.Param("userid")
-	if UserID == "" {
+	Type := c.Param("type")
+	if UserID == "" || Type == "" {
 		c.JSON(http.StatusBadRequest, models.Write("输入无效，请重试！"))
 		return
 	}
-	Record, err := lc.LikeService.GetSaveRecord(UserID)
+	Record, err := lc.LikeService.GetSaveRecord(UserID, Type)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.Write(err.Error()))
 		return
@@ -226,17 +241,19 @@ func (lc *LikeControllers) GetSaveRecord(c *gin.Context) {
 // @Accept application/json
 // @Produce application/json
 // @Param userid path string true "用户ID"
+// @Param type path string true "分区"
 // @Success 200 {object} map[string]interface{} "成功信息以及历史浏览帖子"
 // @Failure 400 {object} models.Response "输入无效"
 // @Failure 500 {object} models.Response "获取浏览记录失败"
-// @Router /api/{userid}/userpage/viewrecord [get]
+// @Router /api/{userid}/userpage/viewrecord/{type} [get]
 func (lc *LikeControllers) GetViewRecord(c *gin.Context) {
 	UserID := c.Param("userid")
-	if UserID == "" {
+	Type := c.Param("type")
+	if UserID == "" || Type == "" {
 		c.JSON(http.StatusBadRequest, models.Write("输入无效，请重试！"))
 		return
 	}
-	Record, err := lc.LikeService.GetViewRecord(UserID)
+	Record, err := lc.LikeService.GetViewRecord(UserID, Type)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.Write(err.Error()))
 		return
@@ -264,29 +281,31 @@ func (lc *LikeControllers) GetViewRecord(c *gin.Context) {
 // @Param commentid path string true "评论ID"
 // @Param userid path string true "用户ID"
 // @Param postid path string true "帖子ID"
+// @Param type path string true "帖子类型"
 // @Success 201 {object} models.Response "用户收藏成功"
 // @Failure 400 {object} models.Response "输入无效"
 // @Failure 500 {object} models.Response "收藏记录上传失败"
-// @Router /api/{userid}/post/{postid}/{commentid}/like [post]
+// @Router /api/{userid}/{type}/{postid}/{commentid}/like [post]
 func (lc *LikeControllers) LikeComment(c *gin.Context) {
 	CommentID := c.Param("commentid")
 	UserID := c.Param("userid")
 	PostID := c.Param("postid")
-	if CommentID == "" || UserID == "" || PostID == "" {
+	Type:=c.Param("type")
+	if CommentID == "" || UserID == "" || PostID == "" ||Type==""{
 		c.JSON(http.StatusBadRequest, models.Write("输入无效，请重试！"))
 		return
 	}
-	if err := lc.LikeService.LikeComment(CommentID, UserID); err != nil {
+	if err := lc.LikeService.HandleUserAction("comment", "like", CommentID, UserID, Type, "like"); err != nil {
 		c.JSON(http.StatusInternalServerError, models.Write(err.Error()))
 		return
 	}
-	User, _ := lc.UserService.GetUserFromID(UserID)
-	CommenterID, CommentBody, err1 := lc.LikeService.SearchCommentByID(CommentID)
+	User, _ := lc.UserService.SearchUserByID(UserID)
+	Comment, err1 := lc.PostService.SearchCommentByID(CommentID)
 	if err1 != nil {
 		c.JSON(http.StatusMultiStatus, models.Write("点赞处理成功，消息上传失败"))
 	}
-	message := fmt.Sprintf("用户%s点赞了你的评论:\n%s", User.Username, CommentBody)
-	if err := lc.LikeService.InitMessage(CommenterID, message, User.ImageURL, "点赞", PostID); err != nil {
+	message := fmt.Sprintf("用户%s点赞了你的评论:\n%s", User.Username, Comment.Body)
+	if err := lc.LikeService.InitMessage(Comment.CommenterID, message, User.ImageURL, "点赞", PostID); err != nil {
 		c.JSON(http.StatusMultiStatus, models.Write("点赞处理成功，消息上传失败"))
 	}
 	c.JSON(http.StatusCreated, models.Write("点赞评论成功！"))
@@ -299,18 +318,20 @@ func (lc *LikeControllers) LikeComment(c *gin.Context) {
 // @Produce application/json
 // @Param commentid path string true "评论ID"
 // @Param userid path string true "用户ID"
+// @Param type path string true "帖子类型"
 // @Success 201 {object} models.Response "用户取消点赞成功"
 // @Failure 400 {object} models.Response "输入无效"
 // @Failure 500 {object} models.Response "取消点赞记录上传失败"
-// @Router /api/{userid}/post/{postid}/{commentid}/cancellike [post]
+// @Router /api/{userid}/{type}/{postid}/{commentid}/cancellike [post]
 func (lc *LikeControllers) CancelCommentLike(c *gin.Context) {
 	CommentID := c.Param("commentid")
 	UserID := c.Param("userid")
-	if CommentID == "" || UserID == "" {
+	Type:=c.Param("type")
+	if CommentID == "" || UserID == ""||Type=="" {
 		c.JSON(http.StatusBadRequest, models.Write("输入无效，请重试！"))
 		return
 	}
-	if err := lc.LikeService.CancelCommentLike(CommentID, UserID); err != nil {
+	if err := lc.LikeService.HandleUserAction("comment", "like", CommentID, UserID, Type, "cancel"); err != nil {
 		c.JSON(http.StatusInternalServerError, models.Write(err.Error()))
 		return
 	}
@@ -325,29 +346,31 @@ func (lc *LikeControllers) CancelCommentLike(c *gin.Context) {
 // @Param replyid path string true "回复ID"
 // @Param userid path string true "用户ID"
 // @Param postid path string true "帖子ID"
+// @Param type path string true "帖子类型"
 // @Success 201 {object} models.Response "用户点赞成功"
 // @Failure 400 {object} models.Response "输入无效"
 // @Failure 500 {object} models.Response "点赞记录上传失败"
-// @Router /api/{userid}/post/{postid}/{commentid}/{replyid}/like [post]
+// @Router /api/{userid}/{type}/{postid}/{commentid}/{replyid}/like [post]
 func (lc *LikeControllers) LikeReply(c *gin.Context) {
 	ReplyID := c.Param("replyid")
 	UserID := c.Param("userid")
-	PostID := c.Param("Postid")
-	if ReplyID == "" || UserID == "" || PostID == "" {
+	PostID := c.Param("postid")
+	Type:=c.Param("type")
+	if ReplyID == "" || UserID == "" || PostID == "" ||Type==""{
 		c.JSON(http.StatusBadRequest, models.Write("输入无效，请重试！"))
 		return
 	}
-	if err := lc.LikeService.LikeReply(ReplyID, UserID); err != nil {
+	if err := lc.LikeService.HandleUserAction("reply", "like", ReplyID, UserID, "life", "like"); err != nil {
 		c.JSON(http.StatusInternalServerError, models.Write(err.Error()))
 		return
 	}
-	User, _ := lc.UserService.GetUserFromID(UserID)
-	ReplyerID, ReplyBody, err1 := lc.LikeService.SearchReplyByID(ReplyID)
+	User, _ := lc.UserService.SearchUserByID(UserID)
+	Reply, err1 := lc.PostService.SearchReplyByID(ReplyID)
 	if err1 != nil {
 		c.JSON(http.StatusMultiStatus, models.Write("点赞处理成功，消息上传失败"))
 	}
-	message := fmt.Sprintf("用户%s点赞了你的评论:\n%s", User.Username, ReplyBody)
-	if err := lc.LikeService.InitMessage(ReplyerID, message, User.ImageURL, "点赞", PostID); err != nil {
+	message := fmt.Sprintf("用户%s点赞了你的评论:\n%s", User.Username, Reply.Body)
+	if err := lc.LikeService.InitMessage(Reply.ReplyerID, message, User.ImageURL, "life", PostID); err != nil {
 		c.JSON(http.StatusMultiStatus, models.Write("点赞处理成功，消息上传失败"))
 	}
 	c.JSON(http.StatusCreated, models.Write("点赞评论成功！"))
@@ -360,18 +383,20 @@ func (lc *LikeControllers) LikeReply(c *gin.Context) {
 // @Produce application/json
 // @Param replyid path string true "回复ID"
 // @Param userid path string true "用户ID"
+// @Param type path string true "帖子类型"
 // @Success 201 {object} models.Response "用户取消点赞成功"
 // @Failure 400 {object} models.Response "输入无效"
 // @Failure 500 {object} models.Response "取消点赞记录上传失败"
-// @Router /api/{userid}/post/{postid}/{commentid}/{replyid}/cancellike [post]
+// @Router /api/{userid}/{type}/{postid}/{commentid}/{replyid}/cancellike [post]
 func (lc *LikeControllers) CancelReplyLike(c *gin.Context) {
 	ReplyID := c.Param("replyid")
 	UserID := c.Param("userid")
-	if ReplyID == "" || UserID == "" {
+	Type:=c.Param("type")
+	if ReplyID == "" || UserID == ""||Type=="" {
 		c.JSON(http.StatusBadRequest, models.Write("输入无效，请重试！"))
 		return
 	}
-	if err := lc.LikeService.CancelReplyLike(ReplyID, UserID); err != nil {
+	if err := lc.LikeService.HandleUserAction("reply", "like", ReplyID, UserID, Type, "cancel"); err != nil {
 		c.JSON(http.StatusInternalServerError, models.Write(err.Error()))
 		return
 	}
@@ -393,9 +418,9 @@ func (lc *LikeControllers) GetPostCounts(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.Write("输入无效，请重试！"))
 		return
 	}
-	LikeCounts, err1 := lc.LikeService.GetPostLikes(PostID)
-	SaveCounts, err2 := lc.LikeService.GetPostSaves(PostID)
-	ViewCounts, err3 := lc.LikeService.GetPostViews(PostID)
+	LikeCounts, err1 := lc.LikeService.GetCount("post", PostID, "like")
+	SaveCounts, err2 := lc.LikeService.GetCount("post", PostID, "save")
+	ViewCounts, err3 := lc.LikeService.GetCount("post", PostID, "view")
 	if err1 != nil || err2 != nil || err3 != nil {
 		fmt.Print(err1)
 		log.Printf("get post %s count error", PostID)
@@ -418,7 +443,7 @@ func (lc *LikeControllers) GetCommentCounts(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.Write("输入无效，请重试！"))
 		return
 	}
-	LikeCount, err := lc.LikeService.GetCommentLikes(CommentID)
+	LikeCount, err := lc.LikeService.GetCount("comment", CommentID, "like")
 	if err != nil {
 		log.Printf("get comment %s count error", CommentID)
 	}
@@ -440,16 +465,16 @@ func (lc *LikeControllers) GetReplyCounts(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.Write("输入无效，请重试！"))
 		return
 	}
-	LikeCount, err := lc.LikeService.GetReplyLikes(ReplyID)
+	LikeCount, err := lc.LikeService.GetCount("reply", ReplyID, "like")
 	if err != nil {
-		log.Printf("get comment %s count error", ReplyID)
+		log.Printf("get reply %s count error", ReplyID)
 	}
 	c.JSON(http.StatusOK, gin.H{"likecount": LikeCount})
 }
 
 // 定期更新数据至数据库
-func (lc *LikeControllers) UpdateAllCount() {
-	lc.LikeService.StartUpdateTicker()
+func (lc *LikeControllers) UpdateAllCount(ctx context.Context) {
+	lc.LikeService.StartUpdateTicker(ctx)
 }
 
 // @Summary 关注用户
@@ -475,7 +500,7 @@ func (lc *LikeControllers) FollowUser(c *gin.Context) {
 		c.JSON(http.StatusConflict, models.Write(err.Error()))
 		return
 	}
-	User, _ := lc.UserService.GetUserFromID(UserID)
+	User, _ := lc.UserService.SearchUserByID(UserID)
 	message := fmt.Sprintf("用户%s关注了你", User.Username)
 	if err := lc.LikeService.InitMessage(FolloweeID, message, User.ImageURL, "关注", UserID); err != nil {
 		c.JSON(http.StatusMultiStatus, models.Write("关注处理成功，消息上传失败"))
@@ -573,8 +598,8 @@ func (lc *LikeControllers) GetPostStatus(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.Write("输入无效，请重试！"))
 		return
 	}
-	LikeStatus := lc.LikeService.GetPostLikeStatus(UserID, PostID)
-	SaveStatus := lc.LikeService.GetPostSaveStatus(UserID, PostID)
+	LikeStatus := lc.LikeService.GetEntityStatus("post_like", UserID, PostID)
+	SaveStatus := lc.LikeService.GetEntityStatus("post_save", UserID, PostID)
 	c.JSON(http.StatusOK, gin.H{"LikeStatus": LikeStatus, "SaveStatus": SaveStatus})
 }
 
@@ -595,7 +620,7 @@ func (lc *LikeControllers) GetCommentStatus(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.Write("输入无效，请重试！"))
 		return
 	}
-	LikeStatus := lc.LikeService.GetCommentLikeStatus(UserID, CommentID)
+	LikeStatus := lc.LikeService.GetEntityStatus("comment_like", UserID, CommentID)
 	c.JSON(http.StatusOK, gin.H{"LikeStatus": LikeStatus})
 }
 
@@ -616,7 +641,7 @@ func (lc *LikeControllers) GetReplyStatus(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.Write("输入无效，请重试！"))
 		return
 	}
-	LikeStatus := lc.LikeService.GetReplyLikeStatus(UserID, ReplyID)
+	LikeStatus := lc.LikeService.GetEntityStatus("reply_like", UserID, ReplyID)
 	c.JSON(http.StatusOK, gin.H{"LikeStatus": LikeStatus})
 }
 
@@ -637,6 +662,6 @@ func (lc *LikeControllers) GetFollowStatus(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.Write("输入无效，请重试！"))
 		return
 	}
-	FollowStatus := lc.LikeService.GetFollowStatus(UserID, FolloweeID)
+	FollowStatus := lc.LikeService.GetEntityStatus("follow", UserID, FolloweeID)
 	c.JSON(http.StatusOK, gin.H{"FollowStatus": FollowStatus})
 }

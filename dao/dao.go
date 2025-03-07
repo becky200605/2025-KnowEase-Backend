@@ -15,7 +15,7 @@ func NewDB(addr string) *gorm.DB {
 			SingularTable: true,
 		},
 	})
-	db.AutoMigrate(&models.User{}, &models.Emailverify{}, &models.Comment{}, &models.Message{}, &models.PostMessage{}, &models.Reply{}, &models.UserLikeHistory{}, &models.UserSaveHistory{}, &models.UserViewHistory{}, &models.FollowMessage{})
+	db.AutoMigrate(&models.User{}, &models.Emailverify{}, &models.Comment{}, &models.Message{}, &models.PostMessage{}, &models.Reply{}, &models.UserLikeHistory{}, &models.UserSaveHistory{}, &models.UserViewHistory{}, &models.FollowMessage{}, &models.QAs{}, &models.SearchRecord{}, &models.AIChatMessage{},&models.AIChatHistory{})
 	if err != nil {
 		panic(err)
 	}

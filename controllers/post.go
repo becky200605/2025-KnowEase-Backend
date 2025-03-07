@@ -49,12 +49,12 @@ func (pc *PostControllers) PublishPostBody(c *gin.Context) {
 	for {
 		//生成帖子id
 		Post.PostID = pc.EmailService.RandomCode(6)
-		err := pc.PostService.PostDao.SearchPostID(Post.PostID)
+		_, err := pc.PostService.GetPostByID(Post.PostID)
 		if err == gorm.ErrRecordNotFound {
 			break
 		}
 	}
-	PosterName, PosterURL, err := pc.PostService.SearchPosterMessage(UserID)
+	PosterName, PosterURL, err := pc.UserService.SearchPosterMessage(UserID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.Write("查询发帖人信息失败！"))
 		return
@@ -84,14 +84,8 @@ func (pc *PostControllers) DeletePost(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.Write("输入无效，请重试！"))
 		return
 	}
-	var PostIDs []string
-	PostIDs = append(PostIDs, PostID)
-	if err := pc.PostService.DeletePost(PostIDs); err != nil {
+	if err := pc.PostService.DeletePost(PostID); err != nil {
 		c.JSON(http.StatusInternalServerError, models.Write("删除帖子失败！"))
-		return
-	}
-	if err := pc.PostService.DeletePostComment(PostIDs); err != nil {
-		c.JSON(http.StatusInternalServerError, models.Write("删除帖子相关评论失败！"))
 		return
 	}
 	c.JSON(http.StatusCreated, models.Write("删帖成功！"))
@@ -99,7 +93,7 @@ func (pc *PostControllers) DeletePost(c *gin.Context) {
 
 // @Summary 批量删除帖子
 // @Description 用户在个人主页选择批量删除帖子
-// @Tags 个人主页-删帖
+// @Tags 个人主页-我的发布
 // @Accept  json
 // @Produce  json
 // @Param userid path string true "用户ID"
@@ -118,16 +112,8 @@ func (pc *PostControllers) DeletePosts(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.Write("ID输入无效，请重试！"))
 		return
 	}
-	if err := pc.PostService.DeletePost(PostIDS); err != nil {
+	if err := pc.PostService.DeletePosts(PostIDS); err != nil {
 		c.JSON(http.StatusInternalServerError, models.Write("批量删除帖子失败！"))
-		return
-	}
-	if err := pc.PostService.DeletePostComment(PostIDS); err != nil {
-		c.JSON(http.StatusInternalServerError, models.Write("删除相关帖子评论失败！"))
-		return
-	}
-	if err := pc.PostService.DeletePostComment(PostIDS); err != nil {
-		c.JSON(http.StatusInternalServerError, models.Write("删除相关帖子评论失败！"))
 		return
 	}
 	c.JSON(http.StatusCreated, models.Write("批量删除帖子成功！"))
@@ -291,13 +277,13 @@ func (pc *PostControllers) PublishComment(c *gin.Context) {
 	for {
 		//生成评论id
 		Post.CommentID = pc.EmailService.RandomCode(6)
-		err := pc.PostService.PostDao.SearchCommentID(Post.CommentID)
-		err1 := pc.PostService.PostDao.SearchReplyID(Post.CommentID)
+		_, err := pc.PostService.SearchCommentByID(Post.CommentID)
+		_, err1 := pc.PostService.SearchReplyByID(Post.CommentID)
 		if err == gorm.ErrRecordNotFound && err1 == gorm.ErrRecordNotFound {
 			break
 		}
 	}
-	PosterName, PosterURL, err := pc.PostService.SearchPosterMessage(UserID)
+	PosterName, PosterURL, err := pc.UserService.SearchPosterMessage(UserID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.Write("查询回复人信息失败！"))
 		return
@@ -309,7 +295,7 @@ func (pc *PostControllers) PublishComment(c *gin.Context) {
 		return
 	}
 	PostMessage, _ := pc.PostService.GetPostByID(PostID)
-	User, _ := pc.UserService.GetUserFromID(UserID)
+	User, _ := pc.UserService.SearchUserByID(UserID)
 	message := fmt.Sprintf("用户%s评论了帖子:\n%s", User.Username, PostMessage.Title)
 	if err := pc.LikeService.InitMessage(PostMessage.PosterID, message, User.ImageURL, "评论", PostID); err != nil {
 		c.JSON(http.StatusMultiStatus, models.Write("评论处理成功，消息上传失败"))
@@ -326,7 +312,7 @@ func (pc *PostControllers) PublishComment(c *gin.Context) {
 // @Success 201 {object} models.Response "删除成功"
 // @Failure 400 {object} models.Response "输入无效，请重试!"
 // @Failure 500 {object} models.Response "查询失败"
-// @Router /api/{userid}/post/{postid}/deletecomment [delete]
+// @Router /api/{userid}/post/{postid}/{commentid}/deletecomment [delete]
 func (pc *PostControllers) DeleteComment(c *gin.Context) {
 	CommentID := c.Param("commentid")
 	if CommentID == "" {
@@ -367,18 +353,19 @@ func (pc *PostControllers) PublishReply(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.Write("输入无效，请重试!"))
 		return
 	}
+	Post.PostID = PostID
 	Post.CommentID = CommentID
 	Post.ReplyerID = UserID
 	for {
 		//生成回复id
 		Post.ReplyID = pc.EmailService.RandomCode(6)
-		err := pc.PostService.PostDao.SearchCommentID(Post.ReplyID)
-		err1 := pc.PostService.PostDao.SearchReplyID(Post.ReplyID)
+		_, err := pc.PostService.SearchCommentByID(Post.ReplyID)
+		_, err1 := pc.PostService.SearchReplyByID(Post.ReplyID)
 		if err == gorm.ErrRecordNotFound && err1 == gorm.ErrRecordNotFound {
 			break
 		}
 	}
-	PosterName, PosterURL, err := pc.PostService.SearchPosterMessage(UserID)
+	PosterName, PosterURL, err := pc.UserService.SearchPosterMessage(UserID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.Write("查询回复人信息失败！"))
 		return
@@ -390,10 +377,10 @@ func (pc *PostControllers) PublishReply(c *gin.Context) {
 		return
 	}
 	PostMessage, _ := pc.PostService.GetPostByID(PostID)
-	CommenterID, CommentBody, _ := pc.LikeService.SearchCommentByID(CommentID)
-	User, _ := pc.UserService.UserDao.GetUserFromID(UserID)
-	message := fmt.Sprintf("用户%s回复了你在帖子%s的评论:\n%s", User.Username, PostMessage.Title, CommentBody)
-	if err := pc.LikeService.InitMessage(CommenterID, message, User.ImageURL, "评论", PostID); err != nil {
+	Comment, _ := pc.PostService.SearchCommentByID(CommentID)
+	User, _ := pc.UserService.SearchUserByID(UserID)
+	message := fmt.Sprintf("用户%s回复了你在帖子%s的评论:\n%s", User.Username, PostMessage.Title, Comment.Body)
+	if err := pc.LikeService.InitMessage(Comment.CommenterID, message, User.ImageURL, "评论", PostID); err != nil {
 		c.JSON(http.StatusMultiStatus, models.Write("回复处理成功，消息上次失败"))
 	}
 	c.JSON(http.StatusCreated, gin.H{"message": "发布回复成功！", "ReplyMessage": Post})
@@ -444,7 +431,7 @@ func (pc *PostControllers) GetPostMessage(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.Write("输入无效，请重试！"))
 		return
 	}
-	pc.LikeService.ViewPost(PostID, UserID)
+	pc.LikeService.HandleUserAction("post", "view", PostID, UserID, "生活", "like")
 	PostMessage, err := pc.PostService.GetAllComment(PostID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.Write("查询帖子具体信息出错！"))
@@ -554,4 +541,31 @@ func (ps *PostControllers) GetToken(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"token": token})
+}
+
+// @Summary 获取用户生活帖子
+// @Description 获取该用户发布的生活帖子
+// @Tags 他人主页
+// @Accept json
+// @Produce json
+// @Param userid path string true "用户ID"
+// @Success 200 {object} map[string]interface{} "获取成功以及帖子信息"
+// @Failure 400 {object} models.Response "输入无效，请重试"
+// @Failure 500 {object} models.Response "查询失败"
+// @Router /api/userpage/{userid}/getuserpost [get]
+func (pc *PostControllers) GetUserPosts(c *gin.Context) {
+	UserID := c.Param("userid")
+	if UserID == "" {
+		c.JSON(http.StatusBadRequest, models.Write("输入无效，请重试！"))
+		return
+	}
+	Posts, err := pc.PostService.GetUserPosts(UserID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.Write("查询用户发布的帖子出错！"))
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"message": "获取用户发布帖子成功！",
+		"Posts":   Posts,
+	})
 }

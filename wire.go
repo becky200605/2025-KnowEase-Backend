@@ -4,17 +4,20 @@
 package main
 
 import (
+	rag "KnowEase/RAG/rag_go/client"
 	"KnowEase/controllers"
 	"KnowEase/dao"
+	"KnowEase/middleware"
 	"KnowEase/routes"
 	"KnowEase/services"
-	"KnowEase/middleware"
+
 	"github.com/google/wire"
 )
 
 func InitializeApp() *routes.APP {
 	wire.Build(
 		dao.ProviderSet,
+		rag.NewRAGService,
 		services.ProviderSet,
 		controllers.ProviderSet,
 		routes.ProviderSet,
@@ -24,3 +27,4 @@ func InitializeApp() *routes.APP {
 	)
 	return nil
 }
+

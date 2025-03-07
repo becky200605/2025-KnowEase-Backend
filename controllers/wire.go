@@ -6,4 +6,7 @@ var ProviderSet = wire.NewSet(
 	NewLikeControllers,
 	NewPostControllers,
 	NewUserControllers,
+	NewQAControllers,
+	NewSearchController,
+	NewAIChatControllers,
 )

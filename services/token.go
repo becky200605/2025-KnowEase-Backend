@@ -2,11 +2,13 @@ package services
 
 import (
 	"KnowEase/models"
+	"KnowEase/utils"
 	"errors"
 	"fmt"
 	"strings"
 	"time"
 
+	"github.com/go-redis/redis/v8"
 	"github.com/golang-jwt/jwt/v4"
 )
 
@@ -32,6 +34,9 @@ func (ts *TokenService) GenerateToken(user *models.User) string {
 
 // 检验token
 func (ts *TokenService) VerifyToken(tokenString string) (string, error) {
+	if ts.IsTokenBlacklisted(tokenString) {
+		return "", fmt.Errorf("token has been invalidated")
+	}
 	if tokenString == "" {
 		return "", errors.New("authorization token required")
 	}
@@ -67,26 +72,38 @@ func (ts *TokenService) VerifyToken(tokenString string) (string, error) {
 	return role, nil
 }
 
-// 强制过期token
-func (ts *TokenService) InvalidateToken(tokenString string) (string, error) {
-	// 解析JWT token
+// 将token加入黑名单
+func (ts *TokenService) AddToBlacklist(tokenString string) error {
 	token, _, err := new(jwt.Parser).ParseUnverified(tokenString, jwt.MapClaims{})
 	if err != nil {
-		return "", fmt.Errorf("invalid token: %v", err)
+		return fmt.Errorf("failed to parse token: %v", err)
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		return "", fmt.Errorf("invalid claims")
+		return fmt.Errorf("invalid token claims")
 	}
-	claims["exp"] = time.Now().Add(-time.Hour * 180).Unix()
 
-	// 重新签发过期的token
-	newtoken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	t, err := newtoken.SignedString([]byte("secret"))
+	expiration, ok := claims["exp"].(float64)
+	if !ok {
+		return fmt.Errorf("token does not have exp claim")
+	}
+
+	err = utils.Client.Set(utils.Ctx, tokenString, "blacklisted", time.Unix(int64(expiration), 0).Sub(time.Now())).Err()
 	if err != nil {
-		return "", fmt.Errorf("failed to sign new token: %v", err)
+		return fmt.Errorf("failed to add token to blacklist: %v", err)
 	}
 
-	return t, nil
+	return nil
+}
+
+// 检测token是否在黑名单内
+func (ts *TokenService)IsTokenBlacklisted(tokenString string) bool {
+	val, err := utils.Client.Get(utils.Ctx, tokenString).Result()
+	if err == redis.Nil {
+		return false
+	} else if err != nil {
+		return false
+	}
+	return val == "blacklisted"
 }

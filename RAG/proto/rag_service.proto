@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package rag;
+
+option go_package = "rag-system/proto/rag";
+
+service RAGService {
+  rpc Search (SearchRequest) returns (SearchResponse) {}
+  rpc SyncData (SyncDataRequest) returns (SyncDataResponse) {}
+}
+
+message SearchRequest {
+  string query = 1;
+}
+
+message SearchResponse {
+  repeated Document documents = 1;
+  string answer = 2;
+}
+
+message Document {
+  string post_id =1;
+  string question= 2;
+  string answer=3;
+}
+
+message SyncDataRequest {
+  int64 from_id = 1;
+}
+
+message SyncDataResponse {
+  int64 synced_count = 1;
+} 

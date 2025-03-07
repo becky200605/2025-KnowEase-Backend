@@ -158,7 +158,7 @@ func (u *UserControllers) Register(c *gin.Context) {
 	User.ID = u.EmailService.RandomCode(9)
 	//防止id重复
 	for {
-		err := u.UserService.UserDao.SearchUserid(User.ID)
+		_, err := u.UserService.SearchUserByID(User.ID)
 		if err == gorm.ErrRecordNotFound {
 			break
 		}
@@ -263,6 +263,7 @@ func (u *UserControllers) UpdateVerifyEmail(c *gin.Context) {
 // @Param user body models.Login true "邮箱和新密码"
 // @Success 201 {object} models.Response "修改密码成功"
 // @Failure 400 {object} models.Response "输入无效"
+// @Failure 404 {object} models.Response "未找到该用户"
 // @Failure 500 {object} models.Response "修改密码失败"
 // @Router /api/forgetPassword/sendemail/verifycode/update [post]
 func (u *UserControllers) ChangePassword(c *gin.Context) {
@@ -271,7 +272,12 @@ func (u *UserControllers) ChangePassword(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.Write("输入无效，请重试！"))
 		return
 	}
-	if err := u.UserService.ChangePassword(User); err != nil {
+	UserMessage, err := u.UserService.GetUserFromEmail(User.Email)
+	if err != nil {
+		c.JSON(http.StatusNotFound, models.Write("未找到该用户"))
+		return
+	}
+	if err := u.UserService.ChangePassword(UserMessage.ID, User.Password); err != nil {
 		c.JSON(http.StatusInternalServerError, models.Write(err.Error()))
 		return
 	}
@@ -298,7 +304,7 @@ func (uc *UserControllers) Logout(c *gin.Context) {
 	if len(tokenString) > 7 && tokenString[:7] == "Bearer " {
 		tokenString = tokenString[7:]
 	}
-	_, err := uc.TokenService.InvalidateToken(tokenString)
+	err := uc.TokenService.AddToBlacklist(tokenString)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.Write(err.Error()))
 		return
@@ -387,7 +393,7 @@ func (uc *UserControllers) ChangeUserPassword(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.Write("输入无效，请重试！"))
 		return
 	}
-	if err := uc.UserService.ChangeUserPassword(User.ID, User.Password); err != nil {
+	if err := uc.UserService.ChangePassword(User.ID, User.Password); err != nil {
 		c.JSON(http.StatusInternalServerError, models.Write(err.Error()))
 		return
 	}
@@ -486,3 +492,26 @@ func (uc *UserControllers) ChangeUsername(c *gin.Context) {
 
 }
 
+// @Summary 获取用户基本信息
+// @Description 在他人主页获取用户基本信息
+// @Tags 个人主页
+// @Accept  json
+// @Produce  json
+// @Param userid path string true "用户ID"
+// @Success 200 {object} map[string]interface{} "响应成功信息以及用户基本信息"
+// @Failure 400 {object} models.Response "输入无效"
+// @Failure 500 {object} models.Response "查询失败"
+// @Router /api/userpage/{userid} [get]
+func (uc *UserControllers) GetUserMessage(c *gin.Context) {
+	UserID := c.Param("userid")
+	if UserID == "" {
+		c.JSON(http.StatusBadRequest, models.Write("输入无效，请重试！"))
+		return
+	}
+	UserMessage, err := uc.UserService.SearchUserByID(UserID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.Write("查询用户信息失败！"))
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "获取用户信息成功！", "username": UserMessage.Username, "userUrl": UserMessage.ImageURL, "backgroundUrl": UserMessage.PageBackgroundURL, "userid": UserMessage.ID})
+}

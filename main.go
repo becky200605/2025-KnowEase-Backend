@@ -2,23 +2,25 @@ package main
 
 import (
 	"fmt"
-	"os"
 
-	"github.com/joho/godotenv"
+	"github.com/spf13/viper"
 )
 
 func init() {
-	if err := godotenv.Load(); err != nil {
-		fmt.Println("Error loading .env file")
+	viper.SetConfigFile(".env")
+	viper.AutomaticEnv() // 允许使用环境变量覆盖配置
+
+	// 读取配置
+	if err := viper.ReadInConfig(); err != nil {
+		fmt.Println("Warning: Unable to load .env file")
 	}
 }
 
 func ProvideDBConnectionString() string {
-	dsn := os.Getenv("DSN")
+	dsn := viper.GetString("DSN") // 读取 DSN 配置
 	if dsn == "" {
 		panic("未设置数据库连接，请检查环境变量")
 	}
-
 	return dsn
 }
 

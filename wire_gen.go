@@ -7,6 +7,7 @@
 package main
 
 import (
+	"KnowEase/RAG/rag_go/client"
 	"KnowEase/controllers"
 	"KnowEase/dao"
 	"KnowEase/middleware"
@@ -29,12 +30,25 @@ func InitializeApp() *routes.APP {
 	userSvc := routes.NewUserSvc(userControllers, middlewareMiddleware)
 	likeDaoInterface := dao.ProvideLikeDao(db)
 	postDaoInterface := dao.ProvidePostDao(db)
-	likeService := services.NewLikeService(likeDaoInterface, postDaoInterface, userDaoInterface)
+	qaDaoInterface := dao.ProvideQADao(db)
+	likeService := services.NewLikeService(likeDaoInterface, postDaoInterface, userDaoInterface, qaDaoInterface)
 	postService := services.NewPostService(postDaoInterface, likeDaoInterface, userDaoInterface)
 	likeControllers := controllers.NewLikeControllers(likeService, postService, userService)
 	postControllers := controllers.NewPostControllers(postService, likeService, emailService, userService)
 	postSvc := routes.NewPostSvc(likeControllers, middlewareMiddleware, postControllers)
-	userPageSvc := routes.NewUserPageSvc(likeControllers, middlewareMiddleware, postControllers, userControllers)
-	app := routes.NewApp(userSvc, postSvc, userPageSvc)
+	ragService := rag.NewRAGService()
+	qaService := services.NewQAService(qaDaoInterface, likeDaoInterface, userDaoInterface, ragService, postDaoInterface)
+	qaControllers := controllers.NewQAControllers(qaService, emailService, userService, likeService, postService)
+	userPageSvc := routes.NewUserPageSvc(likeControllers, middlewareMiddleware, postControllers, userControllers, qaControllers)
+	qaSvc := routes.NewQASvc(qaControllers, middlewareMiddleware)
+	searchDaoInterface := dao.ProvideSearchDao(db)
+	searchService := services.NewSearchService(searchDaoInterface)
+	searchControllers := controllers.NewSearchController(searchService)
+	searchSvc := routes.NewSearchSvc(searchControllers, middlewareMiddleware)
+	aiChatInterface := dao.ProvideAIChatDao(db)
+	aiChatService := services.NewAIChatService(aiChatInterface, ragService)
+	aiChatControllers := controllers.NewAIChatControllers(aiChatService)
+	aiChatSvc := routes.NewAIChatSvc(aiChatControllers, middlewareMiddleware)
+	app := routes.NewApp(userSvc, postSvc, userPageSvc, qaSvc, searchSvc, aiChatSvc)
 	return app
 }

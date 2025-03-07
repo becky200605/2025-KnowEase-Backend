@@ -1,4 +1,11 @@
 .env
 KnowEase1_linux_amd64
 KnowEase_linux_amd64
+build/
 config.yaml
+__pycache__/
+dist/
+.idea/
+scripts/
+docker-compose.yml
+KnowEase_RAGService.egg-info/

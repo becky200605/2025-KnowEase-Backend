@@ -15,6 +15,336 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api/QA/getbytag": {
+            "post": {
+                "description": "根据标签获取问答帖子",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "问答"
+                ],
+                "summary": "根据标签获取问答帖子",
+                "parameters": [
+                    {
+                        "description": "标签名以及用户ID",
+                        "name": "post",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Type"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "获取成功以及问答信息",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "输入无效，请重试",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "查询失败",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/QA/getgoodqa": {
+            "post": {
+                "description": "获取精华帖(如果不用标签筛选的话 tag里传一个空字符串)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "问答"
+                ],
+                "summary": "获取精华帖",
+                "parameters": [
+                    {
+                        "description": "用户ID以及标签信息",
+                        "name": "tag",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Type"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "获取成功以及问答信息",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "输入无效，请重试",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "查询失败",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/QA/{postid}": {
+            "get": {
+                "description": "获取问答帖子详细信息",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "问答"
+                ],
+                "summary": "获取问答帖子详细信息",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "帖子ID",
+                        "name": "postid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "获取成功以及问答信息",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "输入无效，请重试",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "查询失败",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/aichat/chat/{userid}/{chatid}/": {
+            "post": {
+                "description": "用户发送ai请求，调用api生成回答",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "AI"
+                ],
+                "summary": "生成用户回答",
+                "parameters": [
+                    {
+                        "description": "用户输入的问题",
+                        "name": "UserMessage",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.AIChatMessage"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "生成回答成功",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "输入无效，请重试",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/aichat/create": {
+            "post": {
+                "description": "用户创建新的聊天记录",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "AI"
+                ],
+                "summary": "创建新的聊天",
+                "parameters": [
+                    {
+                        "description": "用户聊天信息",
+                        "name": "AIChatHistory",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.AIChatHistory"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "聊天信息",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "输入无效，请重试",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "创建聊天失败",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/aichat/{userid}/getlist": {
+            "get": {
+                "description": "获取用户创建的所有聊天记录列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "AI"
+                ],
+                "summary": "获取历史聊天记录列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户ID",
+                        "name": "UserID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "历史聊天记录列表",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "输入无效，请重试",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "搜索记录失败",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/aichat/{userid}/search/{chatid}/gethistory": {
+            "get": {
+                "description": "获取用户某一个聊天历史里的历史聊天记录",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "AI"
+                ],
+                "summary": "获取历史聊天记录",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户ID",
+                        "name": "UserID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "聊天ID",
+                        "name": "ChatID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "历史聊天记录",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "输入无效，请重试",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "搜索记录失败",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/forgetPassword/sendemail": {
             "post": {
                 "description": "接收用户的邮箱地址后发送验证码邮件",
@@ -140,6 +470,12 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "输入无效",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "未找到该用户",
                         "schema": {
                             "$ref": "#/definitions/models.Response"
                         }
@@ -379,9 +715,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/posts/{postid}/{userid}/save": {
-            "post": {
-                "description": "用户给帖子收藏，收藏数加一",
+        "/api/mypost/deleteqas": {
+            "delete": {
+                "description": "用户删除已发布的问答",
                 "consumes": [
                     "application/json"
                 ],
@@ -389,9 +725,55 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "帖子-收藏"
+                    "个人主页-我的发布"
                 ],
-                "summary": "用户收藏帖子",
+                "summary": "批量删除问答",
+                "parameters": [
+                    {
+                        "description": "帖子id们",
+                        "name": "post",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.PostIDs"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "删除失败",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "输入无效，请重试",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "删除失败",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/mypost/{postid}/deleteqa": {
+            "delete": {
+                "description": "用户删除已发布的问答",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "个人主页-我的发布"
+                ],
+                "summary": "删除问答",
                 "parameters": [
                     {
                         "type": "string",
@@ -399,30 +781,23 @@ const docTemplate = `{
                         "name": "postid",
                         "in": "path",
                         "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "用户ID",
-                        "name": "userid",
-                        "in": "path",
-                        "required": true
                     }
                 ],
                 "responses": {
                     "201": {
-                        "description": "用户收藏成功",
+                        "description": "删除失败",
                         "schema": {
                             "$ref": "#/definitions/models.Response"
                         }
                     },
                     "400": {
-                        "description": "输入无效",
+                        "description": "输入无效，请重试",
                         "schema": {
                             "$ref": "#/definitions/models.Response"
                         }
                     },
                     "500": {
-                        "description": "收藏记录上传失败",
+                        "description": "删除失败",
                         "schema": {
                             "$ref": "#/definitions/models.Response"
                         }
@@ -568,6 +943,650 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "数据库错误或其他服务器错误",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/search": {
+            "post": {
+                "description": "搜索查询",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "搜索"
+                ],
+                "summary": "搜索",
+                "parameters": [
+                    {
+                        "description": "用户输入的问题及id",
+                        "name": "SearchMessage",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.SearchRecord"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "获取成功以及搜索的信息",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "输入无效，请重试",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "查询失败",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/search/:userid/deleteall": {
+            "delete": {
+                "description": "用户清空搜索记录",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "搜索"
+                ],
+                "summary": "清空用户搜索记录",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户ID",
+                        "name": "userid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "删除用户搜索记录成功",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "输入无效",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "删除用户搜索记录失败",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/search/:userid/recommend": {
+            "post": {
+                "description": "根据搜索记录获取用户可能想要搜索的内容",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "搜索"
+                ],
+                "summary": "猜你想搜",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户ID",
+                        "name": "userid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "获取成功以及搜索推荐内容",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "输入无效，请重试",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "查询失败",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/search/delete": {
+            "delete": {
+                "description": "用户删除一个搜索记录",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "搜索"
+                ],
+                "summary": "删除用户搜索记录",
+                "parameters": [
+                    {
+                        "description": "搜索记录和用户ID",
+                        "name": "message",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.SearchRecord"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "删除用户搜索记录成功",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "输入无效",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "删除用户搜索记录失败",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/search/gethotrank": {
+            "post": {
+                "description": "获取热搜榜",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "搜索"
+                ],
+                "summary": "获取热搜榜",
+                "responses": {
+                    "200": {
+                        "description": "获取热搜榜成功并返回具体信息",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "获取热搜榜失败",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/search/syncRecord": {
+            "post": {
+                "description": "搜索记录储存入库",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "搜索"
+                ],
+                "summary": "搜索记录储存",
+                "parameters": [
+                    {
+                        "description": "用户搜索记录",
+                        "name": "record",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.SearchRecord"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "储存成功并返回具体信息",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "输入无效",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "储存失败",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/search/{userid}/getrecord": {
+            "get": {
+                "description": "获取用户的最近几条搜索记录",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "搜索"
+                ],
+                "summary": "获取用户搜索记录",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户ID",
+                        "name": "userid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "获取成功以及搜索记录",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "输入无效，请重试",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "查询失败",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/userpage/{userid}": {
+            "get": {
+                "description": "在他人主页获取用户基本信息",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "个人主页"
+                ],
+                "summary": "获取用户基本信息",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户ID",
+                        "name": "userid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "响应成功信息以及用户基本信息",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "输入无效",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "查询失败",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/userpage/{userid}/getuserpost": {
+            "get": {
+                "description": "获取该用户发布的生活帖子",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "他人主页"
+                ],
+                "summary": "获取用户生活帖子",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户ID",
+                        "name": "userid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "获取成功以及帖子信息",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "输入无效，请重试",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "查询失败",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/userpage/{userid}/getuserqa": {
+            "get": {
+                "description": "获取该用户发布的问答帖子",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "他人主页"
+                ],
+                "summary": "获取用户问答帖子",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户ID",
+                        "name": "userid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "获取成功以及问答信息",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "输入无效，请重试",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "查询失败",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/{type}/{postid}/{userid}/save": {
+            "post": {
+                "description": "用户给帖子收藏，收藏数加一",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "帖子-收藏"
+                ],
+                "summary": "用户收藏帖子",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "帖子ID",
+                        "name": "postid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "用户ID",
+                        "name": "userid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "帖子类型",
+                        "name": "type",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "用户收藏成功",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "输入无效",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "收藏记录上传失败",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/{userid}/QA/publish": {
+            "post": {
+                "description": "用户发布一个新的问答帖子",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "问答"
+                ],
+                "summary": "发布问答",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户ID",
+                        "name": "userid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "问答内容",
+                        "name": "QA",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.QAs"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "发布问答成功",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "输入无效，请重试",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/{userid}/QA/similarity": {
+            "post": {
+                "description": "根据用户输入的问题，搜索其同质化程度",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "问答"
+                ],
+                "summary": "搜索相似问答",
+                "parameters": [
+                    {
+                        "description": "用户输入的问题",
+                        "name": "QA",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.QAs"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "未检测到类似问答",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "302": {
+                        "description": "检测到有类似问答帖子",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "输入无效，请重试",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/{userid}/QA/{postid}/getcounts": {
+            "get": {
+                "description": "获取帖子的点赞数，收藏数，评论量",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "帖子"
+                ],
+                "summary": "获取问答帖子相关数值",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "帖子ID",
+                        "name": "postid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "相关数值",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "输入无效",
                         "schema": {
                             "$ref": "#/definitions/models.Response"
                         }
@@ -1055,152 +2074,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/{userid}/post/{postid}/cancellike": {
-            "post": {
-                "description": "用户取消点赞，点赞数减一",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "帖子-点赞"
-                ],
-                "summary": "用户取消点赞帖子",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "帖子ID",
-                        "name": "postid",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "用户D",
-                        "name": "userid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "用户取消点赞成功",
-                        "schema": {
-                            "$ref": "#/definitions/models.Response"
-                        }
-                    },
-                    "400": {
-                        "description": "输入无效",
-                        "schema": {
-                            "$ref": "#/definitions/models.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "取消点赞记录上传失败",
-                        "schema": {
-                            "$ref": "#/definitions/models.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/{userid}/post/{postid}/cancelsave": {
-            "post": {
-                "description": "用户取消收藏，收藏数减一",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "帖子-收藏"
-                ],
-                "summary": "用户取消收藏帖子",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "帖子ID",
-                        "name": "postid",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "用户ID",
-                        "name": "userid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "用户取消收藏成功",
-                        "schema": {
-                            "$ref": "#/definitions/models.Response"
-                        }
-                    },
-                    "400": {
-                        "description": "输入无效",
-                        "schema": {
-                            "$ref": "#/definitions/models.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "取消收藏记录上传失败",
-                        "schema": {
-                            "$ref": "#/definitions/models.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/{userid}/post/{postid}/deletecomment": {
-            "delete": {
-                "description": "用户在帖子下面发布评论",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "生活区-评论"
-                ],
-                "summary": "删除评论",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "评论ID",
-                        "name": "commentid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "删除成功",
-                        "schema": {
-                            "$ref": "#/definitions/models.Response"
-                        }
-                    },
-                    "400": {
-                        "description": "输入无效，请重试!",
-                        "schema": {
-                            "$ref": "#/definitions/models.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "查询失败",
-                        "schema": {
-                            "$ref": "#/definitions/models.Response"
-                        }
-                    }
-                }
-            }
-        },
         "/api/{userid}/post/{postid}/getcounts": {
             "get": {
                 "description": "获取帖子的点赞数，收藏数，浏览量",
@@ -1286,57 +2159,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/{userid}/post/{postid}/like": {
-            "post": {
-                "description": "用户给帖子点赞，点赞数加一",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "帖子-点赞"
-                ],
-                "summary": "用户点赞帖子",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "帖子ID",
-                        "name": "postid",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "用户ID",
-                        "name": "userid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "用户点赞成功",
-                        "schema": {
-                            "$ref": "#/definitions/models.Response"
-                        }
-                    },
-                    "400": {
-                        "description": "输入无效",
-                        "schema": {
-                            "$ref": "#/definitions/models.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "点赞记录上传失败",
-                        "schema": {
-                            "$ref": "#/definitions/models.Response"
-                        }
-                    }
-                }
-            }
-        },
         "/api/{userid}/post/{postid}/publishcomment": {
             "post": {
                 "description": "用户在帖子下面发布评论",
@@ -1389,9 +2211,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/{userid}/post/{postid}/{commentid}/cancellike": {
-            "post": {
-                "description": "用户取消点赞评论，评论数减一",
+        "/api/{userid}/post/{postid}/{commentid}/deletecomment": {
+            "delete": {
+                "description": "用户在帖子下面发布评论",
                 "consumes": [
                     "application/json"
                 ],
@@ -1399,9 +2221,9 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "帖子-评论"
+                    "生活区-评论"
                 ],
-                "summary": "用户取消点赞评论",
+                "summary": "删除评论",
                 "parameters": [
                     {
                         "type": "string",
@@ -1409,30 +2231,23 @@ const docTemplate = `{
                         "name": "commentid",
                         "in": "path",
                         "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "用户ID",
-                        "name": "userid",
-                        "in": "path",
-                        "required": true
                     }
                 ],
                 "responses": {
                     "201": {
-                        "description": "用户取消点赞成功",
+                        "description": "删除成功",
                         "schema": {
                             "$ref": "#/definitions/models.Response"
                         }
                     },
                     "400": {
-                        "description": "输入无效",
+                        "description": "输入无效，请重试!",
                         "schema": {
                             "$ref": "#/definitions/models.Response"
                         }
                     },
                     "500": {
-                        "description": "取消点赞记录上传失败",
+                        "description": "查询失败",
                         "schema": {
                             "$ref": "#/definitions/models.Response"
                         }
@@ -1518,64 +2333,6 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "输入无效，请重试!",
-                        "schema": {
-                            "$ref": "#/definitions/models.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/{userid}/post/{postid}/{commentid}/like": {
-            "post": {
-                "description": "用户给评论点赞，评论数加一",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "帖子-评论"
-                ],
-                "summary": "用户点赞评论",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "评论ID",
-                        "name": "commentid",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "用户ID",
-                        "name": "userid",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "帖子ID",
-                        "name": "postid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "用户收藏成功",
-                        "schema": {
-                            "$ref": "#/definitions/models.Response"
-                        }
-                    },
-                    "400": {
-                        "description": "输入无效",
-                        "schema": {
-                            "$ref": "#/definitions/models.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "收藏记录上传失败",
                         "schema": {
                             "$ref": "#/definitions/models.Response"
                         }
@@ -1685,57 +2442,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/{userid}/post/{postid}/{commentid}/{replyid}/cancellike": {
-            "post": {
-                "description": "用户取消点赞回复，点赞数减一",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "帖子-评论"
-                ],
-                "summary": "用户取消点赞回复",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "回复ID",
-                        "name": "replyid",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "用户ID",
-                        "name": "userid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "用户取消点赞成功",
-                        "schema": {
-                            "$ref": "#/definitions/models.Response"
-                        }
-                    },
-                    "400": {
-                        "description": "输入无效",
-                        "schema": {
-                            "$ref": "#/definitions/models.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "取消点赞记录上传失败",
-                        "schema": {
-                            "$ref": "#/definitions/models.Response"
-                        }
-                    }
-                }
-            }
-        },
         "/api/{userid}/post/{postid}/{commentid}/{replyid}/getcounts": {
             "get": {
                 "description": "获取回复的点赞数",
@@ -1814,64 +2520,6 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "输入无效，请重试!",
-                        "schema": {
-                            "$ref": "#/definitions/models.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/{userid}/post/{postid}/{commentid}/{replyid}/like": {
-            "post": {
-                "description": "用户给回复点赞，评论数加一",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "帖子-评论"
-                ],
-                "summary": "用户点赞回复",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "回复ID",
-                        "name": "replyid",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "用户ID",
-                        "name": "userid",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "帖子ID",
-                        "name": "postid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "用户点赞成功",
-                        "schema": {
-                            "$ref": "#/definitions/models.Response"
-                        }
-                    },
-                    "400": {
-                        "description": "输入无效",
-                        "schema": {
-                            "$ref": "#/definitions/models.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "点赞记录上传失败",
                         "schema": {
                             "$ref": "#/definitions/models.Response"
                         }
@@ -2288,7 +2936,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/{userid}/userpage/likerecord": {
+        "/api/{userid}/userpage/likerecord/{type}": {
             "get": {
                 "description": "在个人主页获取用户一个月（31天）内的点赞记录",
                 "consumes": [
@@ -2306,6 +2954,13 @@ const docTemplate = `{
                         "type": "string",
                         "description": "用户ID",
                         "name": "userid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "分区",
+                        "name": "type",
                         "in": "path",
                         "required": true
                     }
@@ -2387,7 +3042,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "个人主页-删帖"
+                    "个人主页-我的发布"
                 ],
                 "summary": "批量删除帖子",
                 "parameters": [
@@ -2421,7 +3076,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/{userid}/userpage/saverecord": {
+        "/api/{userid}/userpage/saverecord/{type}": {
             "get": {
                 "description": "在个人主页获取用户的历史收藏记录",
                 "consumes": [
@@ -2431,7 +3086,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "个人主页-记录查询"
+                    "个人主页-记录查询-生活"
                 ],
                 "summary": "获取用户历史收藏记录",
                 "parameters": [
@@ -2439,6 +3094,20 @@ const docTemplate = `{
                         "type": "string",
                         "description": "用户ID",
                         "name": "userid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "帖子类型",
+                        "name": "type",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "分区",
+                        "name": "type",
                         "in": "path",
                         "required": true
                     }
@@ -2512,7 +3181,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/{userid}/userpage/viewrecord": {
+        "/api/{userid}/userpage/viewrecord/{type}": {
             "get": {
                 "description": "在个人主页获取用户的历史浏览记录",
                 "consumes": [
@@ -2530,6 +3199,13 @@ const docTemplate = `{
                         "type": "string",
                         "description": "用户ID",
                         "name": "userid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "分区",
+                        "name": "type",
                         "in": "path",
                         "required": true
                     }
@@ -2710,9 +3386,499 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/api/{userid}/{chatid}/sseconnect": {
+            "post": {
+                "description": "发送请求，建立sse连接",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "问答"
+                ],
+                "summary": "流式响应连接",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "聊天id",
+                        "name": "chatid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "历史聊天记录",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/{userid}/{type}/{postid}/cancellike": {
+            "post": {
+                "description": "用户取消点赞，点赞数减一",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "帖子-点赞"
+                ],
+                "summary": "用户取消点赞帖子",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "帖子ID",
+                        "name": "postid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "用户D",
+                        "name": "userid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "帖子类型",
+                        "name": "type",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "用户取消点赞成功",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "输入无效",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "取消点赞记录上传失败",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/{userid}/{type}/{postid}/cancelsave": {
+            "post": {
+                "description": "用户取消收藏，收藏数减一",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "帖子-收藏"
+                ],
+                "summary": "用户取消收藏帖子",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "帖子ID",
+                        "name": "postid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "用户ID",
+                        "name": "userid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "帖子类型",
+                        "name": "type",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "用户取消收藏成功",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "输入无效",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "取消收藏记录上传失败",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/{userid}/{type}/{postid}/like": {
+            "post": {
+                "description": "用户给帖子点赞，点赞数加一",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "帖子-点赞"
+                ],
+                "summary": "用户点赞帖子",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "帖子ID",
+                        "name": "postid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "用户ID",
+                        "name": "userid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "帖子类型",
+                        "name": "type",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "用户点赞成功",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "输入无效",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "点赞记录上传失败",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/{userid}/{type}/{postid}/{commentid}/cancellike": {
+            "post": {
+                "description": "用户取消点赞评论，评论数减一",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "帖子-评论"
+                ],
+                "summary": "用户取消点赞评论",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "评论ID",
+                        "name": "commentid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "用户ID",
+                        "name": "userid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "帖子类型",
+                        "name": "type",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "用户取消点赞成功",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "输入无效",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "取消点赞记录上传失败",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/{userid}/{type}/{postid}/{commentid}/like": {
+            "post": {
+                "description": "用户给评论点赞，评论数加一",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "帖子-评论"
+                ],
+                "summary": "用户点赞评论",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "评论ID",
+                        "name": "commentid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "用户ID",
+                        "name": "userid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "帖子ID",
+                        "name": "postid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "帖子类型",
+                        "name": "type",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "用户收藏成功",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "输入无效",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "收藏记录上传失败",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/{userid}/{type}/{postid}/{commentid}/{replyid}/cancellike": {
+            "post": {
+                "description": "用户取消点赞回复，点赞数减一",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "帖子-评论"
+                ],
+                "summary": "用户取消点赞回复",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "回复ID",
+                        "name": "replyid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "用户ID",
+                        "name": "userid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "帖子类型",
+                        "name": "type",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "用户取消点赞成功",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "输入无效",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "取消点赞记录上传失败",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/{userid}/{type}/{postid}/{commentid}/{replyid}/like": {
+            "post": {
+                "description": "用户给回复点赞，评论数加一",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "帖子-评论"
+                ],
+                "summary": "用户点赞回复",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "回复ID",
+                        "name": "replyid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "用户ID",
+                        "name": "userid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "帖子ID",
+                        "name": "postid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "帖子类型",
+                        "name": "type",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "用户点赞成功",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "输入无效",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "点赞记录上传失败",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "models.AIChatHistory": {
+            "type": "object",
+            "properties": {
+                "chatid": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "history": {
+                    "type": "string"
+                },
+                "userid": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.AIChatMessage": {
+            "type": "object",
+            "properties": {
+                "chatid": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "request": {
+                    "type": "string"
+                },
+                "response": {
+                    "type": "string"
+                },
+                "userid": {
+                    "type": "string"
+                }
+            }
+        },
         "models.Code": {
             "type": "object",
             "properties": {
@@ -2789,6 +3955,14 @@ const docTemplate = `{
                 }
             }
         },
+        "models.PostIDs": {
+            "type": "object",
+            "properties": {
+                "postids": {
+                    "type": "string"
+                }
+            }
+        },
         "models.PostMessage": {
             "type": "object",
             "properties": {
@@ -2836,6 +4010,53 @@ const docTemplate = `{
                 }
             }
         },
+        "models.QAs": {
+            "type": "object",
+            "properties": {
+                "authorID": {
+                    "type": "string"
+                },
+                "authorName": {
+                    "type": "string"
+                },
+                "authorURL": {
+                    "type": "string"
+                },
+                "comment": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Comment"
+                    }
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "likeCount": {
+                    "type": "integer"
+                },
+                "postID": {
+                    "type": "string"
+                },
+                "question": {
+                    "type": "string"
+                },
+                "saveCount": {
+                    "type": "integer"
+                },
+                "tag": {
+                    "type": "string"
+                },
+                "updatedAT": {
+                    "type": "string"
+                },
+                "viewCount": {
+                    "type": "integer"
+                },
+                "weight": {
+                    "type": "number"
+                }
+            }
+        },
         "models.Reply": {
             "type": "object",
             "properties": {
@@ -2856,6 +4077,9 @@ const docTemplate = `{
                 },
                 "likeCount": {
                     "type": "integer"
+                },
+                "postid": {
+                    "type": "string"
                 },
                 "reply": {
                     "type": "array",
@@ -2878,6 +4102,31 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.SearchRecord": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "searchmessage": {
+                    "type": "string"
+                },
+                "userid": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.Type": {
+            "type": "object",
+            "properties": {
+                "tag": {
+                    "type": "string"
+                },
+                "userid": {
                     "type": "string"
                 }
             }

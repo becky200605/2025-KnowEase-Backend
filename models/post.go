@@ -20,16 +20,7 @@ type PostMessage struct {
 	CreateAt   time.Time
 }
 
-// 消息推送
-type Message struct {
-	UserID    string `gorm:"not null"`
-	PosterURL string `grom:"type:varchar(255)"`
-	Message   string
-	PostID    string
-	Tag       string
-	Status    string `gorm:"not null"`
-	CreateAt  time.Time
-}
+
 type PostIDs struct {
 	PostID string `json:"postids"`
 }
@@ -43,6 +34,7 @@ type UserViewHistory struct {
 	ID       int    `gorm:"primaryKey"`
 	PostID   string `gorm:"not null"`
 	UserID   string `gorm:"not null"`
+	Type     string
 	CreateAt time.Time
 }
 
@@ -61,6 +53,7 @@ type Comment struct {
 
 // 需要实现发布评论的时候更新reply数组
 type Reply struct {
+	PostID      string `gorm:"not null" json:"postid"`
 	ReplyID     string `gorm:"not null" json:"commentid"`
 	LikeCount   int    `gorm:"default:0"`
 	ImageURL    string `gorm:"type:varchar(255)" json:"imageurl"`
@@ -84,8 +77,8 @@ type PostData struct {
 }
 
 type QiNiuYunConfig struct {
-	AccessKey string `yaml:"access_key"`
-	SecretKey string `yaml:"secret_key"`
-	Bucket    string `yaml:"bucket_name"`
-	Domain    string `yaml:"domain"`
+	AccessKey string `mapstructure:"access_key"`
+	SecretKey string `mapstructure:"secret_key"`
+	Bucket    string `mapstructure:"bucket_name"`
+	Domain    string `mapstructure:"domain"`
 }

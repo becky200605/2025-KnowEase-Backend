@@ -56,56 +56,52 @@ func (us *UserService) ComparePassword(password1, password2 string) error {
 	return err
 }
 
-// 修改密码
-func (us *UserService) ChangePassword(user models.Login) error {
-	User, err := us.UserDao.GetUserFromEmail(user.Email)
-	if err != nil {
-		return fmt.Errorf("failed to find usermessage")
-	}
-	(*User).Password, err = EncryptPassword(user.Password)
-	if err != nil {
-		return fmt.Errorf("failed to encrypt password")
-	}
-	if err := us.UserDao.ChangePassword(User); err != nil {
-		return fmt.Errorf("failed to change password")
-	}
-	return nil
-}
-
-// 修改用户个人主页背景
-func (us *UserService) ChangeUserBackground(UserID, Newbackground string) error {
-	return us.UserDao.ChangeUserBackground(UserID, Newbackground)
-}
-
-// 修改个人头像
-func (us *UserService) ChangeUserPicture(UserID, NewPicture string) error {
-	return us.UserDao.ChangeUserPicture(UserID, NewPicture)
-
+// 通过邮箱地址查找用户
+func (us *UserService) GetUserFromEmail(Email string) (*models.User, error) {
+	return us.UserDao.GetUserFromEmail(Email)
 }
 
 // 修改密码
-func (us *UserService) ChangeUserPassword(UserID, NewPassword string) error {
+func (us *UserService) ChangePassword(UserID, NewPassword string) error {
 	EncryptedPassword, err := EncryptPassword(NewPassword)
 	if err != nil {
 		return fmt.Errorf("failed to encrypt password")
 	}
-	if err := us.UserDao.ChangeUserPassword(UserID, EncryptedPassword); err != nil {
+	if err := us.UserDao.ChangeUserMessage(UserID, "password", EncryptedPassword); err != nil {
 		return fmt.Errorf("failed to change password")
 	}
 	return nil
 }
 
+// 修改用户背景
+func (us *UserService) ChangeUserBackground(UserID, UpdateValue string) error {
+	return us.UserDao.ChangeUserMessage(UserID, "page_background_url", UpdateValue)
+}
+
+// 修改用户头像
+func (us *UserService) ChangeUserPicture(UserID, UpdateValue string) error {
+	return us.UserDao.ChangeUserMessage(UserID, "image_url", UpdateValue)
+}
+
 // 修改用户邮箱
-func (us *UserService) ChangeUserEmail(UserID, NewEmail string) error {
-	return us.UserDao.ChangeUserEmail(UserID, NewEmail)
+func (us *UserService) ChangeUserEmail(UserID, UpdateValue string) error {
+	return us.UserDao.ChangeUserMessage(UserID, "email", UpdateValue)
 }
 
 // 修改用户名
-func (us *UserService) ChangeUsername(UserID, NewName string) error {
-	return us.UserDao.ChangeUsername(UserID, NewName)
+func (us *UserService) ChangeUsername(UserID, UpdateValue string) error {
+	return us.UserDao.ChangeUserMessage(UserID, "username", UpdateValue)
 }
 
-// 通过id查找用户信息
-func (us *UserService) GetUserFromID(UserID string) (*models.Usermessage, error) {
-	return us.UserDao.GetUserFromID(UserID)
+// 查询用户个人信息
+func (us *UserService) SearchUserByID(UserID string) (models.User, error) {
+	return us.UserDao.SearchUserByID(UserID)
+}
+//查询发帖人信息
+func (us *UserService) SearchPosterMessage(UserID string) (string, string, error) {
+	PosterMessage, err := us.UserDao.SearchUserByID(UserID)
+	if err != nil {
+		return "", "", err
+	}
+	return PosterMessage.Username, PosterMessage.ImageURL, nil
 }

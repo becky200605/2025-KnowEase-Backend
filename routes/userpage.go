@@ -12,14 +12,16 @@ type UserPageSvc struct {
 	m  *middleware.Middleware
 	pc *controllers.PostControllers
 	uc *controllers.UserControllers
+	qc *controllers.QAControllers
 }
 
-func NewUserPageSvc(lc *controllers.LikeControllers, m *middleware.Middleware, pc *controllers.PostControllers, uc *controllers.UserControllers) *UserPageSvc {
+func NewUserPageSvc(lc *controllers.LikeControllers, m *middleware.Middleware, pc *controllers.PostControllers, uc *controllers.UserControllers, qc *controllers.QAControllers) *UserPageSvc {
 	return &UserPageSvc{
 		lc: lc,
 		m:  m,
 		pc: pc,
 		uc: uc,
+		qc: qc,
 	}
 }
 func (up *UserPageSvc) NewUserPageGroup(r *gin.Engine) {
@@ -27,10 +29,10 @@ func (up *UserPageSvc) NewUserPageGroup(r *gin.Engine) {
 	r.Use(up.m.Verifytoken())
 	userpage := r.Group("/api")
 	{
-		userpage.GET("/:userid/userpage/likecount", up.lc.GetUserLikes)
-		userpage.GET("/:userid/userpage/likerecord", up.lc.GetLikeRecord)
-		userpage.GET("/:userid/userpage/viewrecord", up.lc.GetViewRecord)
-		userpage.GET("/:userid/userpage/saverecord", up.lc.GetSaveRecord)
+		userpage.GET("/:userid/userpage/count", up.lc.GetUserLikes)
+		userpage.GET("/:userid/userpage/likerecord/:type", up.lc.GetLikeRecord)
+		userpage.GET("/:userid/userpage/viewrecord/:type", up.lc.GetViewRecord)
+		userpage.GET("/:userid/userpage/saverecord/:type", up.lc.GetSaveRecord)
 		userpage.DELETE("/:userid/userpage/mypost/delete/:postid", up.pc.DeletePost)
 		userpage.DELETE("/:userid/userpage/mypost/deleteposts", up.pc.DeletePosts)
 		userpage.POST("/logout", up.uc.Logout)
@@ -48,6 +50,10 @@ func (up *UserPageSvc) NewUserPageGroup(r *gin.Engine) {
 		userpage.GET("/:userid/followmessage", up.pc.GetUserUnreadFollowMessage)
 		userpage.GET("/:userid/likemessage", up.pc.GetUserUnreadLikeMessage)
 		userpage.GET("/:userid/commentmessage", up.pc.GetUserUnreadCommentMessage)
-
+		userpage.DELETE("/mypost/:postid/deleteqas", up.qc.DeleteQAs)
+		userpage.DELETE("/mypost/deleteqa", up.qc.DeleteQA)
+		userpage.GET("/userpage/:userid/getuserpost", up.pc.GetUserPosts)
+		userpage.GET("/userpage/:userid/getuserqa", up.qc.GetUserQA)
+		userpage.GET("/userpage/:userid", up.uc.GetUserMessage)
 	}
 }

@@ -18,9 +18,9 @@ type User struct {
 }
 
 type Usermessage struct {
-	Username string `gorm:"column:username"`
-	UserID   string `gorm:"column:id"`
-	ImageURL string `gorm:"column:imageurl;type:varchar(255)"`
+	Username string
+	UserID   string
+	ImageURL string
 }
 type Login struct {
 	Email    string `json:"email"`
@@ -31,7 +31,6 @@ type FollowMessage struct {
 	FollowerID string
 	FolloweeID string
 }
-
 
 func (u *User) TableName() string {
 	return UserTableName

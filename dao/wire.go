@@ -7,5 +7,8 @@ var ProviderSet = wire.NewSet(
 	ProvideLikeDao,
 	ProvidePostDao,
 	ProvideUserDao,
+	ProvideQADao,
 	NewDB,
+	ProvideSearchDao,
+	ProvideAIChatDao,
 )

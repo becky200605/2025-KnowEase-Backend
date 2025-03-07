@@ -6,12 +6,11 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"time"
 
 	"github.com/qiniu/go-sdk/v7/storagev2/credentials"
 	"github.com/qiniu/go-sdk/v7/storagev2/uptoken"
-	"gopkg.in/yaml.v3"
+	"github.com/spf13/viper"
 	"gorm.io/gorm"
 )
 
@@ -51,13 +50,49 @@ func (ps *PostService) DeleteReply(ReplyID string) error {
 }
 
 // 删除帖子
-func (ps *PostService) DeletePost(PostID []string) []error {
-	return ps.PostDao.DeletePostBody(PostID)
+func (ps *PostService) DeletePost(PostID string) error {
+	err := ps.PostDao.DeletePostBody(PostID)
+	if err != nil {
+		return err
+	}
+	go ps.DeletePostComment(PostID)
+	return nil
+}
+
+// 批量删除帖子
+func (ps *PostService) DeletePosts(PostIDs []string) error {
+	var Err []error
+	for _, PostID := range PostIDs {
+		err := ps.PostDao.DeletePostBody(PostID)
+		if err != nil {
+			Err = append(Err, err)
+		}
+		go ps.DeletePostComment(PostID)
+	}
+	if Err != nil {
+		return fmt.Errorf("failed to delete posts")
+	}
+	return nil
 }
 
 // 删除帖子相关评论
-func (ps *PostService) DeletePostComment(PostID []string) []error {
-	return ps.PostDao.DeleteAllComment(PostID)
+func (ps *PostService) DeletePostComment(PostID string) {
+	Comments, err := ps.PostDao.SearchAllComment(PostID)
+	if err != nil {
+		fmt.Printf("failed to find post %s comment", PostID)
+		return
+	}
+	err = ps.PostDao.DeleteAllComment(PostID)
+	if err != nil {
+		fmt.Printf("failed to delete post %s comment", PostID)
+		return
+	}
+	for _, Comment := range Comments {
+		err := ps.PostDao.DeleteAllReply(Comment.CommentID)
+		if err != nil {
+			fmt.Printf("failed to delete comment %s reply", Comment.CommentID)
+		}
+	}
 }
 
 // 查找相关帖子信息-根据id
@@ -69,7 +104,7 @@ func (ps *PostService) SearchPostByID(ID []string) ([]models.PostMessage, []erro
 		if err != nil {
 			Err = append(Err, err)
 		}
-		PostMessages = append(PostMessages, *PostMessage)
+		PostMessages = append(PostMessages, PostMessage)
 	}
 	if PostMessages == nil {
 		return nil, Err
@@ -82,7 +117,7 @@ func (ps *PostService) SearchPostByID(ID []string) ([]models.PostMessage, []erro
 
 // 推荐的加权
 func (ps *PostService) WeightedRecommendation(UserID string) ([]models.PostRecommendLevel, error) {
-	Record, err := ps.PostDao.SearchViewRecord(UserID)
+	Record, err := ps.LikeDao.GetViewRecord(UserID, "生活")
 	if err != nil {
 		return nil, err
 	}
@@ -90,12 +125,20 @@ func (ps *PostService) WeightedRecommendation(UserID string) ([]models.PostRecom
 	for _, Post := range Record {
 		PostIDS = append(PostIDS, Post.PostID)
 	}
-	var WeightedPosts []models.PostRecommendLevel
-	tagCount, Err := ps.PostDao.SearchCountOfTag(PostIDS)
-	if Err != nil {
-		return nil, fmt.Errorf("failed to count tags")
+	if PostIDS == nil {
+		PostIDS = append(PostIDS, "")
 	}
-	PostMessage, err := ps.PostDao.SearchUnviewedPost(UserID)
+	var WeightedPosts []models.PostRecommendLevel
+	tagCount := make(map[string]int)
+	Tag := [4]string{"校园", "生活", "美食", "绘画"}
+	for i := 0; i < len(Tag); i++ {
+		Count, err := ps.PostDao.SearchCountOfTag(PostIDS, Tag[i])
+		if err != nil {
+			fmt.Printf("search tag %s error:%v", Tag[i], err)
+		}
+		tagCount[Tag[i]] = Count
+	}
+	PostMessage, err := ps.PostDao.SearchUnviewedPostByTag(PostIDS, "")
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +163,18 @@ func (ps *PostService) WeightedRecommendation(UserID string) ([]models.PostRecom
 
 // 查询某一tag的未浏览帖子
 func (ps *PostService) SearchUnviewedPostsByTag(UserID, Tag string) ([]models.PostMessage, error) {
-	return ps.PostDao.SearchUnviewedPostByTag(UserID, Tag)
+	Record, err := ps.LikeDao.GetViewRecord(UserID, "生活")
+	if err != nil {
+		return nil, err
+	}
+	var PostIDS []string
+	for _, Post := range Record {
+		PostIDS = append(PostIDS, Post.PostID)
+	}
+	if PostIDS == nil {
+		PostIDS = append(PostIDS, "")
+	}
+	return ps.PostDao.SearchUnviewedPostByTag(PostIDS, Tag)
 }
 func (ps *PostService) DeleteAllReply(CommentID string) error {
 	return ps.PostDao.DeleteAllReply(CommentID)
@@ -135,9 +189,6 @@ func (ps *PostService) GetAllComment(PostID string) (*models.PostMessage, error)
 	//查询所有的评论
 	Comments, err := ps.PostDao.SearchAllComment(PostMessage.PostID)
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return PostMessage, nil
-		}
 		return nil, err
 	}
 	for i := 0; i < len(Comments); i++ {
@@ -149,19 +200,12 @@ func (ps *PostService) GetAllComment(PostID string) (*models.PostMessage, error)
 		}
 	}
 	PostMessage.Comment = Comments
-	return PostMessage, nil
+	return &PostMessage, nil
 
 }
 
-func (ps *PostService) GetPostByID(PostID string) (*models.PostMessage, error) {
+func (ps *PostService) GetPostByID(PostID string) (models.PostMessage, error) {
 	return ps.PostDao.SearchPostByID(PostID)
-}
-func (ps *PostService) SearchPosterMessage(UserID string) (string, string, error) {
-	PosterMessage, err := ps.UserDao.GetUserFromID(UserID)
-	if err != nil {
-		return "", "", err
-	}
-	return PosterMessage.Username, PosterMessage.ImageURL, nil
 }
 
 // 查询未读消息
@@ -183,22 +227,22 @@ func (ps *PostService) UpdateMessageStatus(UserID, Tag string) {
 		fmt.Printf("update message error:%v", err)
 	}
 }
+
 func (ps *PostService) ReadConfig(filename string) (*models.QiNiuYunConfig, error) {
-	file, err := os.Open(filename)
-	if err != nil {
-		return nil, err
+	v := viper.New()
+	v.SetConfigFile(filename)
+	if err := v.ReadInConfig(); err != nil {
+		return nil, fmt.Errorf("failed to read config file: %w", err)
 	}
-	defer file.Close()
 	var config models.QiNiuYunConfig
-	decoder := yaml.NewDecoder(file)
-	err = decoder.Decode(&config)
-	if err != nil {
-		return nil, err
+	if err := v.Unmarshal(&config); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal config: %w", err)
 	}
 	return &config, nil
-
 }
+
 func (ps *PostService) GetToken(config *models.QiNiuYunConfig) (string, error) {
+	fmt.Print(config)
 	accesskey := config.AccessKey
 	secretkey := config.SecretKey
 	bucket := config.Bucket
@@ -213,4 +257,19 @@ func (ps *PostService) GetToken(config *models.QiNiuYunConfig) (string, error) {
 		return "", nil
 	}
 	return upToken, nil
+}
+
+// 根据id找评论
+func (ps *PostService) SearchCommentByID(CommentID string) (models.Comment, error) {
+	return ps.PostDao.SearchCommentByID(CommentID)
+}
+
+// 根据id找评论
+func (ps *PostService) SearchReplyByID(ReplyID string) (models.Reply, error) {
+	return ps.PostDao.SearchReplyByID(ReplyID)
+}
+
+// 查询用户已发布的帖子
+func (ps *PostService) GetUserPosts(UserID string) ([]models.PostMessage, error) {
+	return ps.PostDao.GetUserPosts(UserID)
 }

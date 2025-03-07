@@ -4,9 +4,8 @@ import (
 	"KnowEase/dao"
 	"fmt"
 	"math/rand"
-	"os"
 
-	"github.com/joho/godotenv"
+	"github.com/spf13/viper"
 	gomail "gopkg.in/gomail.v2"
 )
 
@@ -17,11 +16,6 @@ type EmailService struct {
 
 func NewEmailService(EmailDao dao.EmailDaoInterface, UserDao dao.UserDaoInterface) *EmailService {
 	return &EmailService{EmailDao: EmailDao, UserDao: UserDao}
-}
-func init() {
-	if err := godotenv.Load(); err != nil {
-		fmt.Println("Error loading .env file")
-	}
 }
 
 // 邮箱验证码-注册
@@ -76,7 +70,7 @@ func (es *EmailService) SendEmail(email, code string) error {
 	message.SetHeader("To", email)
 	message.SetHeader("Subject", "小知账号注册")
 	//验证码邮件正文部分
-	password := os.Getenv("EMAIL_PASSWORD")
+	password := viper.GetString("EMAIL_PASSWORD")
 	if password == "" {
 		return fmt.Errorf("未设置邮件授权码，请检查环境变量")
 	}
